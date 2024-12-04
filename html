@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="scr/style/styles.css">
+    <title>API do clima</title>
+
+    <!-- Link para o CSS do Leaflet -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+</head>
+<body>
+    <div id="container">
+        <form id="search">
+            <i class="fa-solid fa-location-dot"></i>
+            <input 
+                type="search" 
+                name="city_name" 
+                id="city_name" 
+                placeholder="Buscar cidade"
+            >
+            <button type="submit">
+                <i class="fa-solid fa-magnifying-glass"></i>
+            </button>
+        </form>
+
+        <div id="weather">
+            <h1 id="title">Rolante, BR</h1>
+
+            <div id="infos">
+                <div id="temp">
+                    <img id="temp_img" src="http://openweathermap.org/img/wn/04d@2x.png" alt="">
+
+                    <div>
+                        <p id="temp_value">32</p>
+                        <p id="temp_description">Ensolarado</p>
+                    </div>
+                </div>
+
+                <div id="other_infos">
+                    <div class="info">
+                        <i id="temp_max_icon" class="fa-solid fa-temperature-high"></i>
+
+                        <div>
+                            <h2>Temp. max</h2>
+                            <p id="temp_max">32 <sup>C°</sup></p>
+                        </div>
+                    </div>
+
+                    <div class="info">
+                        <i id="temp_min_icon" class="fa-solid fa-temperature-low"></i>
+
+                        <div>
+                            <h2>Temp. min</h2>
+                            <p id="temp_min">12 <sup>C°</sup></p>
+                        </div>
+                    </div>
+
+                    <div class="info">
+                        <i id="humidity_icon" class="fa-solid fa-droplet"></i>
+
+                        <div>
+                            <h2>Humidade</h2>
+                            <p id="humidity">50%</p>
+                        </div>
+                    </div>
+
+                    <div class="info">
+                        <i id="wind_icon" class="fa-solid fa-wind"></i>
+
+                        <div>
+                            <h2>Vento</h2>
+                            <p id="wind">50 km/h</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Seção do mapa em um card -->
+        <div class="card">
+            <div id="map"></div>
+        </div>
+
+        <div id="alert"></div>
+    </div>
+
+    <!-- Script para o Leaflet -->
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+    <script>
+        // API Key do OpenWeatherMap (substitua pela sua chave)
+        const apiKey = 'aeea02402e040480fc378c4b065c453e';
+
+        // Função para criar o mapa
+        var map = L.map('map').setView([-23.550520, -46.633308], 12); // Inicializa o mapa com São Paulo
+
+        // Adicionando o mapa de fundo (OpenStreetMap)
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // Função para buscar a cidade e atualizar o mapa
+        document.getElementById('search').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            // Obtém o nome da cidade do campo de pesquisa
+            const cityName = document.getElementById('city_name').value;
+
+            // Faz a requisição à API do OpenWeatherMap para obter as coordenadas
+            fetch(`https://api.openweathermap.org/data/2.5/weather?q=${cityName}&appid=${apiKey}&units=metric&lang=pt_br`)
+                .then(response => response.json())
+                .then(data => {
+                    // Verifica se a cidade foi encontrada
+                    if (data.cod === 200) {
+                        const { lat, lon } = data.coord;
+                        const city = data.name;
+
+                        // Atualiza o título da cidade
+                        document.getElementById('title').innerText = `${city}, BR`;
+
+                        // Atualiza os dados climáticos
+                        document.getElementById('temp_value').innerText = data.main.temp;
+                        document.getElementById('temp_description').innerText = data.weather[0].description;
+                        document.getElementById('temp_max').innerHTML = `${data.main.temp_max} <sup>C°</sup>`;
+                        document.getElementById('temp_min').innerHTML = `${data.main.temp_min} <sup>C°</sup>`;
+                        document.getElementById('humidity').innerText = `${data.main.humidity}%`;
+                        document.getElementById('wind').innerText = `${data.wind.speed} km/h`;
+
+                        // Atualiza o ícone da condição climática
+                        const weatherIcon = `http://openweathermap.org/img/wn/${data.weather[0].icon}@2x.png`;
+                        document.getElementById('temp_img').src = weatherIcon;
+
+                        // Atualiza o mapa com a nova cidade
+                        map.setView([lat, lon], 12); // Move o mapa para as coordenadas da cidade
+                        
+                        // Adiciona um marcador no mapa
+                        L.marker([lat, lon]).addTo(map)
+                            .bindPopup(city)
+                            .openPopup();
+                    } else {
+                        // Exibe um alerta se a cidade não for encontrada
+                        alert('Cidade não encontrada!');
+                    }
+                })
+                .catch(error => {
+                    alert('Erro ao buscar dados da cidade!');
+                    console.error(error);
+                });
+        });
+    </script>
+
+    <script src="scr/js/script.js"></script>
+</body>
+</html>
